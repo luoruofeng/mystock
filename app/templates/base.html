@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyStock - 股票数据分析平台</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .stock-up { color: #d9534f; } /* Red for up in CN market context usually, but global standard is Green. CN is Red up, Green down. */
+        .stock-down { color: #5cb85c; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-chart-line me-2"></i>MyStock</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'home' %}active{% endif %}" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'market' %}active{% endif %}" href="/market">行情总览</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'sectors' %}active{% endif %}" href="/sectors">板块行情</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'rankings' %}active{% endif %}" href="/rankings">
+                            <i class="fas fa-sort-amount-up me-1"></i>涨跌排行
+                        </a>
+                    </li>
+                </ul>
+                <form class="d-flex ms-3" action="/stock/search" method="get" onsubmit="event.preventDefault(); window.location.href='/stock/'+this.q.value.toUpperCase();">
+                    <input class="form-control me-2" type="search" name="q" placeholder="输入代码 (如 0700.HK)" aria-label="Search">
+                    <button class="btn btn-outline-light" type="submit">搜索</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer mt-auto py-3 bg-light text-center">
+        <div class="container">
+            <span class="text-muted">© 2026 MyStock. Data provided by Yahoo Finance via yfinance.</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

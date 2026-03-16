@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+mysql-connector-python
+pymysql
+jinja2
+yfinance
+pandas
+numpy
+requests
+python-dotenv
+python-dateutil
+akshare

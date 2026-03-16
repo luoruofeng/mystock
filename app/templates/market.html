@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>行情总览</h2>
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary active">全部</button>
+            <button type="button" class="btn btn-outline-primary">沪市</button>
+            <button type="button" class="btn btn-outline-primary">深市</button>
+            <button type="button" class="btn btn-outline-primary">港股</button>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>代码</th>
+                <th>名称</th>
+                <th>市场</th>
+                <th>行业</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stock in stocks %}
+            <tr>
+                <td>{{ stock.ticker }}</td>
+                <td>{{ stock.name }}</td>
+                <td>{{ stock.market }}</td>
+                <td>{{ stock.sector }}</td>
+                <td><a href="/stock/{{ stock.ticker }}" class="btn btn-sm btn-primary">详情</a></td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center">暂无数据，请先浏览或搜索股票以加载数据。</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

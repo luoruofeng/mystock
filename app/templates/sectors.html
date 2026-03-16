@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-th-large me-2"></i>板块行情</h2>
+    <small class="text-muted">
+        最后更新: {% if sectors and sectors[0].last_updated %}{{ sectors[0].last_updated.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}暂无数据{% endif %}
+    </small>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">板块行情概览</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>板块名称</th>
+                                <th class="text-center">涨跌幅</th>
+                                <th class="text-center">股票数</th>
+                                <th class="text-center">上涨/下跌</th>
+                                <th class="text-right">总成交量</th>
+                                <th class="text-right">总成交额</th>
+                                <th>领涨股</th>
+                                <th>领跌股</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sector in sectors %}
+                            <tr>
+                                <td>
+                                    <strong>{{ sector.name }}</strong>
+                                    {% if sector.market %}
+                                    <br><small class="text-muted">{{ sector.market }}</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="{% if sector.change_percent and sector.change_percent > 0 %}stock-up{% elif sector.change_percent and sector.change_percent < 0 %}stock-down{% endif %}">
+                                        {% if sector.change_percent %}
+                                            {{ "%.2f"|format(sector.change_percent) }}%
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="text-center">{{ sector.stock_count or 0 }}</td>
+                                <td class="text-center">
+                                    {% if sector.rising_count is not none and sector.falling_count is not none %}
+                                    <span class="stock-up">{{ sector.rising_count }}</span> / 
+                                    <span class="stock-down">{{ sector.falling_count }}</span>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td class="text-right">
+                                    {% if sector.total_volume %}
+                                    {{ (sector.total_volume / 100000000)|round(2) }}亿
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td class="text-right">
+                                    {% if sector.total_amount %}
+                                    {{ (sector.total_amount / 100000000)|round(2) }}亿
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sector.top_gainer_name %}
+                                    <a href="/stock/{{ sector.top_gainer_ticker }}" class="text-decoration-none">
+                                        <span class="stock-up">{{ sector.top_gainer_name }}</span>
+                                        <br><small>{{ "%.2f"|format(sector.top_gainer_change) }}%</small>
+                                    </a>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sector.top_loser_name %}
+                                    <a href="/stock/{{ sector.top_loser_ticker }}" class="text-decoration-none">
+                                        <span class="stock-down">{{ sector.top_loser_name }}</span>
+                                        <br><small>{{ "%.2f"|format(sector.top_loser_change) }}%</small>
+                                    </a>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">暂无板块数据，请先运行更新脚本</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% for sector in sectors %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ sector.name }}</h5>
+                <span class="badge {% if sector.change_percent and sector.change_percent > 0 %}bg-danger{% elif sector.change_percent and sector.change_percent < 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                    {% if sector.change_percent %}{{ "%.2f"|format(sector.change_percent) }}%{% else %}--{% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">股票数量</small>
+                        <div class="h6 mb-0">{{ sector.stock_count or 0 }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">涨跌比</small>
+                        <div class="h6 mb-0">
+                            <span class="stock-up">{{ sector.rising_count or 0 }}</span> : 
+                            <span class="stock-down">{{ sector.falling_count or 0 }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted">总成交量</small>
+                    <div class="h6 mb-0">
+                        {% if sector.total_volume %}
+                        {{ (sector.total_volume / 100000000)|round(2) }} 亿股
+                        {% else %}
+                        -
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted">总成交额</small>
+                    <div class="h6 mb-0">
+                        {% if sector.total_amount %}
+                        {{ (sector.total_amount / 100000000)|round(2) }} 亿元
+                        {% else %}
+                        -
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-2">
+                    <small class="text-muted"><i class="fas fa-arrow-up text-danger me-1"></i>领涨股</small>
+                    {% if sector.top_gainer_name %}
+                    <div>
+                        <a href="/stock/{{ sector.top_gainer_ticker }}" class="text-decoration-none">
+                            {{ sector.top_gainer_name }}
+                        </a>
+                        <span class="stock-up">({{ "%.2f"|format(sector.top_gainer_change) }}%)</span>
+                    </div>
+                    {% else %}
+                    <div class="text-muted">-</div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <small class="text-muted"><i class="fas fa-arrow-down text-success me-1"></i>领跌股</small>
+                    {% if sector.top_loser_name %}
+                    <div>
+                        <a href="/stock/{{ sector.top_loser_ticker }}" class="text-decoration-none">
+                            {{ sector.top_loser_name }}
+                        </a>
+                        <span class="stock-down">({{ "%.2f"|format(sector.top_loser_change) }}%)</span>
+                    </div>
+                    {% else %}
+                    <div class="text-muted">-</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center text-muted py-5">
+        <i class="fas fa-info-circle fa-3x mb-3"></i>
+        <p>暂无板块数据</p>
+        <p class="small">请运行 <code>python scripts/update_sector_data.py</code> 来更新板块数据</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

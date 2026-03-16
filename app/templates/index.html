@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- 市场指数 -->
+<div class="row mb-4">
+    {% for index in indices %}
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="index-icon me-2">
+                        <i class="fas fa-chart-line fa-lg {% if index.change > 0 %}text-danger{% elif index.change < 0 %}text-success{% else %}text-secondary{% endif %}"></i>
+                    </div>
+                    <h6 class="card-title mb-0 text-muted">{{ index.name }}</h6>
+                </div>
+                <h4 class="mb-1 {% if index.change > 0 %}stock-up{% elif index.change < 0 %}stock-down{% else %}text-muted{% endif %}">
+                    {{ "%.2f"|format(index.value) }}
+                </h4>
+                <div class="d-flex align-items-center">
+                    <span class="me-2 {% if index.change > 0 %}stock-up{% elif index.change < 0 %}stock-down{% endif %}">
+                        {% if index.change > 0 %}<i class="fas fa-caret-up"></i>{% elif index.change < 0 %}<i class="fas fa-caret-down"></i>{% endif %}
+                        {{ "%.2f"|format(index.change|abs) }}
+                    </span>
+                    <span class="badge {% if index.change > 0 %}bg-danger{% elif index.change < 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ "%.2f"|format(index.change_percent) }}%
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+
+<!-- 股票列表 -->
+<div class="card">
+    <div class="card-header bg-white">
+        <div class="d-flex flex-wrap justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>公司列表</h5>
+            <span class="text-muted small">共 {{ total }} 条记录</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- 筛选表单 -->
+        <form method="get" action="/" class="row g-2 mb-3" id="searchForm">
+            <div class="col-md-3">
+                <select class="form-select" name="market">
+                    <option value="ALL" {% if market == "ALL" %}selected{% endif %}>全部市场</option>
+                    <option value="HK" {% if market == "HK" %}selected{% endif %}>港股 (.HK)</option>
+                    <option value="SS" {% if market == "SS" %}selected{% endif %}>上证 (.SS)</option>
+                    <option value="SZ" {% if market == "SZ" %}selected{% endif %}>深证 (.SZ)</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input class="form-control" name="keyword" id="keywordInput" placeholder="搜索代码或名称" value="{{ keyword }}" autocomplete="off">
+                    {% if keyword %}
+                    <button class="btn btn-outline-secondary" type="button" id="clearKeyword" title="清除搜索">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="per_page">
+                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20 / 页</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50 / 页</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100 / 页</option>
+                    <option value="200" {% if per_page == 200 %}selected{% endif %}>200 / 页</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-primary w-100" type="submit"><i class="fas fa-search me-1"></i>筛选</button>
+            </div>
+            <input type="hidden" name="page" value="1">
+        </form>
+
+        <!-- 搜索状态提示 -->
+        {% if keyword or market != "ALL" %}
+        <div class="alert alert-info py-2 mb-3 d-flex justify-content-between align-items-center">
+            <span>
+                <i class="fas fa-filter me-1"></i>
+                当前筛选条件：
+                {% if keyword %}<strong>"{{ keyword }}"</strong>{% endif %}
+                {% if keyword and market != "ALL" %}，{% endif %}
+                {% if market != "ALL" %}
+                    {% if market == "HK" %}港股{% elif market == "SS" %}上证{% elif market == "SZ" %}深证{% endif %}
+                {% endif %}
+                <span class="text-muted ms-2">共 {{ total }} 条结果</span>
+            </span>
+            <a href="/" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-redo me-1"></i>重置
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- 股票表格 -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>代码</th>
+                        <th>名称</th>
+                        <th>市场</th>
+                        <th class="text-end">最新价</th>
+                        <th class="text-end">涨跌幅</th>
+                        <th class="text-end">成交量</th>
+                        <th>行业</th>
+                        <th>板块</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stock in stocks %}
+                    <tr>
+                        <td>
+                            <a href="/stock/{{ stock.ticker }}" class="text-decoration-none">
+                                <code>{{ stock.ticker }}</code>
+                            </a>
+                        </td>
+                        <td>
+                            <a href="/stock/{{ stock.ticker }}" class="text-decoration-none text-dark">
+                                {{ stock.name or "-" }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge {% if stock.market == 'HK' %}bg-info{% elif stock.market == 'SS' %}bg-primary{% elif stock.market == 'SZ' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ stock.market or "-" }}
+                            </span>
+                        </td>
+                        <td class="text-end fw-bold{% if stock.price_change and stock.price_change > 0 %} stock-up{% elif stock.price_change and stock.price_change < 0 %} stock-down{% endif %}">
+                            {% if stock.price_close %}{{ "%.2f"|format(stock.price_close) }}{% else %}-{% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if stock.price_change_percent is not none %}
+                            <span class="{% if stock.price_change_percent > 0 %}stock-up{% elif stock.price_change_percent < 0 %}stock-down{% endif %} fw-bold">
+                                {% if stock.price_change_percent > 0 %}+{% endif %}{{ "%.2f"|format(stock.price_change_percent) }}%
+                            </span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="text-end text-muted small">
+                            {% if stock.price_volume %}
+                                {% if stock.price_volume >= 100000000 %}
+                                    {{ "%.2f"|format(stock.price_volume / 100000000) }}亿
+                                {% elif stock.price_volume >= 10000 %}
+                                    {{ "%.2f"|format(stock.price_volume / 10000) }}万
+                                {% else %}
+                                    {{ stock.price_volume }}
+                                {% endif %}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td><small>{{ stock.industry or "-" }}</small></td>
+                        <td><small>{{ stock.sector or "-" }}</small></td>
+                        <td>
+                            <a href="/stock/{{ stock.ticker }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-chart-area"></i> 详情
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-5">
+                            <i class="fas fa-inbox fa-2x mb-3 d-block"></i>
+                            暂无数据，请先同步公司列表数据。
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页 -->
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="/?market={{ market }}&keyword={{ keyword }}&per_page={{ per_page }}&page={{ page - 1 }}">上一页</a>
+                </li>
+                {% for p in range(1, total_pages + 1) %}
+                {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="/?market={{ market }}&keyword={{ keyword }}&per_page={{ per_page }}&page={{ p }}">{{ p }}</a>
+                </li>
+                {% elif p == page - 3 or p == page + 3 %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="/?market={{ market }}&keyword={{ keyword }}&per_page={{ per_page }}&page={{ page + 1 }}">下一页</a>
+                </li>
+            </ul>
+        </nav>
+        <div class="text-center text-muted mt-2 small">
+            第 {{ page }} / {{ total_pages }} 页
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 清除关键词按钮
+    const clearBtn = document.getElementById('clearKeyword');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            document.getElementById('keywordInput').value = '';
+            document.getElementById('searchForm').submit();
+        });
+    }
+});
+</script>
+{% endblock %}
